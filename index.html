@@ -3,251 +3,320 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard Tracking Tontonan</title>
+<title>Dashboard Pemantau Channel</title>
 <style>
   :root{
     --bg:#0b0f17; --panel:#121826; --panel2:#161f30; --border:#232d40;
-    --text:#e7ecf3; --muted:#8b97ab; --accent:#4f8cff; --live:#2ecc71; --danger:#ff5c5c;
+    --text:#e7ecf3; --muted:#8b97ab; --ok:#2ecc71; --down:#ff5c5c; --warn:#f5b041; --accent:#4f8cff;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
   header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:sticky;top:0;background:var(--bg);z-index:5;}
   header h1{font-size:17px;margin:0;}
   header .sub{color:var(--muted);font-size:12.5px;}
-  .wrap{max-width:980px;margin:0 auto;padding:16px;}
+  .wrap{max-width:1040px;margin:0 auto;padding:16px;}
   .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;}
   .card h2{font-size:14px;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
-  .cfgRow{display:flex;gap:8px;flex-wrap:wrap;}
-  .cfgRow input{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 10px;font-size:13.5px;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  input{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 10px;font-size:13.5px;}
+  input.grow{flex:1;min-width:220px;}
+  input.small{width:90px;}
   button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13.5px;cursor:pointer;}
   button.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--text);}
-  button.range{background:var(--panel2);border:1px solid var(--border);color:var(--text);}
-  button.range.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-  .ranges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+  button.tiny{padding:5px 9px;font-size:12px;border-radius:6px;}
+  button:disabled{opacity:.5;cursor:default;}
+  label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:4px;}
+  .field{display:flex;flex-direction:column;}
+  .stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
+  .stat{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:100px;}
+  .stat .n{font-size:20px;font-weight:700;}
+  .stat .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;}
+  .stat.ok .n{color:var(--ok);} .stat.down .n{color:var(--down);} .stat.warn .n{color:var(--warn);}
   table{width:100%;border-collapse:collapse;font-size:13px;}
-  th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;}
   th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;}
   tr:last-child td{border-bottom:none;}
   .tableScroll{overflow-x:auto;}
-  .badge{display:inline-flex;align-items:center;gap:5px;background:rgba(46,204,113,.12);color:var(--live);border:1px solid rgba(46,204,113,.35);padding:2px 8px;border-radius:999px;font-size:11.5px;}
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.4s infinite;}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .empty{color:var(--muted);font-size:13px;padding:14px 4px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:11.5px;border:1px solid;}
+  .badge.ok{color:var(--ok);background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.35);}
+  .badge.down{color:var(--down);background:rgba(255,92,92,.12);border-color:rgba(255,92,92,.35);}
+  .badge.ignore{color:var(--muted);background:rgba(139,151,171,.12);border-color:rgba(139,151,171,.3);}
+  .badge.unknown{color:var(--warn);background:rgba(245,176,65,.12);border-color:rgba(245,176,65,.3);}
   .muted{color:var(--muted);}
-  .statline{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin-bottom:10px;}
-  .statline b{color:var(--text);}
-  .err{color:var(--danger);font-size:13px;}
+  .empty{color:var(--muted);font-size:13px;padding:14px 4px;}
+  .err{color:var(--down);font-size:13px;margin-top:6px;}
+  .ok-msg{color:var(--ok);font-size:12.5px;margin-top:6px;}
   footer{text-align:center;color:var(--muted);font-size:11.5px;padding:20px;}
+  .errcell{max-width:220px;overflow:hidden;text-overflow:ellipsis;color:var(--down);}
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <h1>📺 Dashboard Tracking Tontonan</h1>
+    <h1>🛰️ Dashboard Pemantau Channel</h1>
     <div class="sub" id="subStatus">Memuat pengaturan…</div>
   </div>
-  <button class="ghost" id="btnSettings">⚙️ Pengaturan</button>
+  <div class="row">
+    <button class="ghost" id="btnCheckNow">🔄 Cek Sekarang</button>
+    <button class="ghost" id="btnSettings">⚙️ Pengaturan</button>
+  </div>
 </header>
 
 <div class="wrap">
 
   <div class="card" id="cfgCard" style="display:none;">
     <h2>Pengaturan</h2>
-    <div class="cfgRow">
-      <input id="apiUrlInput" placeholder="https://iptv-tracker.username.workers.dev" />
-      <button id="btnSaveCfg">Simpan</button>
+    <div class="row" style="margin-bottom:10px;">
+      <div class="field" style="flex:1;min-width:220px;">
+        <label>URL Worker (monitor)</label>
+        <input class="grow" id="workerUrlInput" placeholder="https://channel-monitor.username.workers.dev" />
+      </div>
+      <div class="field" style="flex:1;min-width:220px;">
+        <label>Admin Token</label>
+        <input class="grow" id="adminTokenInput" type="password" placeholder="token dari: wrangler secret put ADMIN_TOKEN" />
+      </div>
     </div>
-    <div class="sub" style="margin-top:8px;color:var(--muted);">
-      URL ini sama dengan <code>TRACK_API_URL</code> yang kamu isi di <code>index.html</code> (player) —
-      isi tanpa garis miring di akhir. Disimpan di browser ini saja (localStorage).
+    <div class="row">
+      <button class="ghost" id="btnSaveConn">Simpan Koneksi</button>
     </div>
+    <hr style="border-color:var(--border);margin:14px 0;">
+    <div class="row" style="margin-bottom:10px;">
+      <div class="field" style="flex:1;min-width:260px;">
+        <label>URL Playlist M3U yang dipantau</label>
+        <input class="grow" id="playlistUrlInput" placeholder="https://raw.githubusercontent.com/.../idn-smartv.m3u" />
+      </div>
+      <div class="field">
+        <label>Ambang gagal (berapa kali berturut-turut)</label>
+        <input class="small" id="thresholdInput" type="number" min="1" max="10" value="2" />
+      </div>
+    </div>
+    <div class="row">
+      <button id="btnSaveSettings">Simpan Pengaturan</button>
+    </div>
+    <div class="err" id="cfgErr" style="display:none;"></div>
+    <div class="ok-msg" id="cfgOk" style="display:none;"></div>
   </div>
 
   <div class="card">
-    <h2>Sedang Ditonton</h2>
-    <div class="statline"><span>Total sesi aktif: <b id="liveCount">–</b></span></div>
-    <div class="tableScroll">
-      <table id="liveTable">
-        <thead><tr><th>Channel</th><th>Grup</th><th>Mulai</th><th>Durasi</th></tr></thead>
-        <tbody></tbody>
-      </table>
+    <div class="stats">
+      <div class="stat ok"><div class="n" id="statOk">–</div><div class="l">Normal</div></div>
+      <div class="stat down"><div class="n" id="statDown">–</div><div class="l">Down</div></div>
+      <div class="stat warn"><div class="n" id="statUnknown">–</div><div class="l">Belum Dicek</div></div>
+      <div class="stat"><div class="n" id="statIgnore">–</div><div class="l">Diabaikan</div></div>
     </div>
-    <div class="empty" id="liveEmpty" style="display:none;">Tidak ada yang sedang menonton.</div>
+    <div class="muted" id="lastRunLine" style="font-size:12.5px;">–</div>
   </div>
 
   <div class="card">
-    <h2>Riwayat</h2>
-    <div class="ranges">
-      <button class="range" data-range="1h">1 Jam</button>
-      <button class="range" data-range="12h">12 Jam</button>
-      <button class="range active" data-range="24h">24 Jam</button>
-      <button class="range" data-range="7d">7 Hari</button>
-      <button class="range" data-range="14d">14 Hari</button>
-      <button class="range" data-range="30d">30 Hari</button>
-    </div>
-    <div class="statline">
-      <span>Jumlah sesi: <b id="histCount">–</b></span>
-      <span>Total durasi nonton: <b id="histTotalDur">–</b></span>
-      <span>Channel terpopuler: <b id="histTop">–</b></span>
+    <h2>Daftar Channel</h2>
+    <div class="row" style="margin-bottom:10px;">
+      <input class="grow" id="searchInput" placeholder="Cari nama channel / grup…" />
+      <select id="filterSelect" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 10px;font-size:13.5px;">
+        <option value="">Semua status</option>
+        <option value="down">Hanya Down</option>
+        <option value="ok">Hanya Normal</option>
+        <option value="diabaikan">Hanya Diabaikan</option>
+        <option value="belum-dicek">Belum Dicek</option>
+      </select>
     </div>
     <div class="tableScroll">
-      <table id="histTable">
-        <thead><tr><th>Channel</th><th>Grup</th><th>Mulai</th><th>Selesai</th><th>Durasi</th></tr></thead>
-        <tbody></tbody>
+      <table>
+        <thead><tr><th>Channel</th><th>Grup</th><th>Status</th><th>Gagal Beruntun</th><th>Down Sejak</th><th>Error Terakhir</th><th>Dicek Terakhir</th><th></th></tr></thead>
+        <tbody id="chanBody"></tbody>
       </table>
     </div>
-    <div class="empty" id="histEmpty" style="display:none;">Belum ada riwayat di rentang ini.</div>
-    <div class="err" id="histErr" style="display:none;"></div>
+    <div class="empty" id="chanEmpty" style="display:none;">Belum ada data. Isi Pengaturan lalu tekan "Cek Sekarang".</div>
   </div>
 
 </div>
 
-<footer>Auto-refresh tiap 10 detik &middot; waktu ditampilkan sesuai jam perangkat ini</footer>
+<footer>Status disegarkan otomatis tiap 20 detik &middot; pengecekan penuh berjalan sendiri tiap 15 menit (bisa diubah di wrangler.toml)</footer>
 
 <script>
 (function(){
-  var LS_API = 'trackDashApiUrl';
-  var LS_RANGE = 'trackDashRange';
-  var apiUrl = localStorage.getItem(LS_API) || '';
-  var currentRange = localStorage.getItem(LS_RANGE) || '24h';
-  var liveTimer = null, histTimer = null;
+  var LS = { url:'monUrl', token:'monToken', q:'monSearch' };
+  var workerUrl = localStorage.getItem(LS.url) || '';
+  var adminToken = localStorage.getItem(LS.token) || '';
+  var allChannels = [];
+  var pollTimer = null;
 
   var els = {
     sub: document.getElementById('subStatus'),
     cfgCard: document.getElementById('cfgCard'),
-    apiInput: document.getElementById('apiUrlInput'),
+    workerUrlInput: document.getElementById('workerUrlInput'),
+    adminTokenInput: document.getElementById('adminTokenInput'),
+    btnSaveConn: document.getElementById('btnSaveConn'),
+    playlistUrlInput: document.getElementById('playlistUrlInput'),
+    thresholdInput: document.getElementById('thresholdInput'),
+    btnSaveSettings: document.getElementById('btnSaveSettings'),
+    cfgErr: document.getElementById('cfgErr'),
+    cfgOk: document.getElementById('cfgOk'),
     btnSettings: document.getElementById('btnSettings'),
-    btnSaveCfg: document.getElementById('btnSaveCfg'),
-    liveCount: document.getElementById('liveCount'),
-    liveBody: document.querySelector('#liveTable tbody'),
-    liveEmpty: document.getElementById('liveEmpty'),
-    histCount: document.getElementById('histCount'),
-    histTotalDur: document.getElementById('histTotalDur'),
-    histTop: document.getElementById('histTop'),
-    histBody: document.querySelector('#histTable tbody'),
-    histEmpty: document.getElementById('histEmpty'),
-    histErr: document.getElementById('histErr'),
-    rangeBtns: Array.prototype.slice.call(document.querySelectorAll('.range'))
+    btnCheckNow: document.getElementById('btnCheckNow'),
+    statOk: document.getElementById('statOk'),
+    statDown: document.getElementById('statDown'),
+    statUnknown: document.getElementById('statUnknown'),
+    statIgnore: document.getElementById('statIgnore'),
+    lastRunLine: document.getElementById('lastRunLine'),
+    chanBody: document.getElementById('chanBody'),
+    chanEmpty: document.getElementById('chanEmpty'),
+    searchInput: document.getElementById('searchInput'),
+    filterSelect: document.getElementById('filterSelect')
   };
 
-  function fmtDur(sec){
-    sec = Math.max(0, Math.round(sec));
-    var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
-    if(h>0) return h+'j '+String(m).padStart(2,'0')+'m '+String(s).padStart(2,'0')+'d';
-    if(m>0) return m+'m '+String(s).padStart(2,'0')+'d';
-    return s+'d';
-  }
+  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); }
   function fmtTime(ts){
     if(!ts) return '–';
-    var d = new Date(ts);
-    var today = new Date();
+    var d = new Date(ts), today = new Date();
     var sameDay = d.toDateString() === today.toDateString();
-    var opts = sameDay ? {hour:'2-digit',minute:'2-digit'} : {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'};
-    return d.toLocaleString('id-ID', opts);
+    return d.toLocaleString('id-ID', sameDay ? {hour:'2-digit',minute:'2-digit'} : {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
   }
-  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); }
+  function fmtAgo(ts){
+    if(!ts) return '–';
+    var sec = Math.max(0, Math.round((Date.now()-ts)/1000));
+    if(sec < 60) return sec+'d lalu';
+    var m = Math.floor(sec/60); if(m<60) return m+'m lalu';
+    var h = Math.floor(m/60); if(h<24) return h+'j lalu';
+    return Math.floor(h/24)+'hr lalu';
+  }
 
-  function setConfigured(v){
-    if(v){
-      els.sub.textContent = 'Terhubung ke: ' + apiUrl;
-      els.cfgCard.style.display = 'none';
-    } else {
-      els.sub.textContent = 'Belum ada URL worker tracking -- isi dulu di Pengaturan.';
-      els.cfgCard.style.display = 'block';
-    }
+  function setConnected(ok){
+    els.sub.textContent = ok ? ('Terhubung ke: ' + workerUrl) : 'Belum terhubung -- isi URL worker & admin token di Pengaturan.';
+    els.cfgCard.style.display = ok ? 'none' : 'block';
   }
-  els.apiInput.value = apiUrl;
-  setConfigured(!!apiUrl);
+  els.workerUrlInput.value = workerUrl;
+  els.adminTokenInput.value = adminToken;
+  setConnected(!!workerUrl);
 
   els.btnSettings.addEventListener('click', function(){
     els.cfgCard.style.display = (els.cfgCard.style.display === 'none') ? 'block' : 'none';
   });
-  els.btnSaveCfg.addEventListener('click', function(){
-    apiUrl = els.apiInput.value.trim().replace(/\/+$/, '');
-    try{ localStorage.setItem(LS_API, apiUrl); }catch(e){}
-    setConfigured(!!apiUrl);
-    refreshLive(); refreshHistory();
+
+  els.btnSaveConn.addEventListener('click', function(){
+    workerUrl = els.workerUrlInput.value.trim().replace(/\/+$/, '');
+    adminToken = els.adminTokenInput.value.trim();
+    try{ localStorage.setItem(LS.url, workerUrl); localStorage.setItem(LS.token, adminToken); }catch(e){}
+    setConnected(!!workerUrl);
+    refreshStatus();
   });
 
-  els.rangeBtns.forEach(function(btn){
-    btn.addEventListener('click', function(){
-      currentRange = btn.getAttribute('data-range');
-      try{ localStorage.setItem(LS_RANGE, currentRange); }catch(e){}
-      els.rangeBtns.forEach(function(b){ b.classList.toggle('active', b===btn); });
-      refreshHistory();
+  function api(path, opts){
+    opts = opts || {};
+    var headers = Object.assign({}, opts.headers || {});
+    if(opts.admin) headers['X-Admin-Token'] = adminToken;
+    if(opts.body) headers['Content-Type'] = 'application/json';
+    return fetch(workerUrl + path, {
+      method: opts.method || 'GET',
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      cache: 'no-store'
+    }).then(function(r){
+      return r.json().then(function(data){
+        if(!r.ok) throw new Error(data && data.error ? data.error : ('HTTP ' + r.status));
+        return data;
+      });
+    });
+  }
+
+  els.btnSaveSettings.addEventListener('click', function(){
+    els.cfgErr.style.display = 'none'; els.cfgOk.style.display = 'none';
+    api('/api/settings', { method:'POST', admin:true, body:{
+      playlistUrl: els.playlistUrlInput.value.trim(),
+      failThreshold: parseInt(els.thresholdInput.value, 10) || 2
+    }}).then(function(){
+      els.cfgOk.textContent = 'Tersimpan. Tekan "Cek Sekarang" untuk langsung mengecek dengan pengaturan baru.';
+      els.cfgOk.style.display = 'block';
+    }).catch(function(e){
+      els.cfgErr.textContent = 'Gagal simpan: ' + e.message;
+      els.cfgErr.style.display = 'block';
     });
   });
-  els.rangeBtns.forEach(function(b){ if(b.getAttribute('data-range')===currentRange) b.classList.add('active'); else b.classList.remove('active'); });
 
-  function get(path){
-    if(!apiUrl) return Promise.reject(new Error('belum dikonfigurasi'));
-    return fetch(apiUrl + path, { cache:'no-store' }).then(function(r){
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    });
-  }
-
-  function refreshLive(){
-    if(!apiUrl) return;
-    get('/api/live').then(function(data){
-      var rows = data.sessions || [];
-      els.liveCount.textContent = rows.length;
-      els.liveEmpty.style.display = rows.length ? 'none' : 'block';
-      els.liveBody.innerHTML = rows.map(function(r){
-        return '<tr><td><span class="badge"><span class="dot"></span>' + esc(r.channel || '(tanpa nama)') + '</span></td>'
-          + '<td class="muted">' + esc(r.group||'–') + '</td>'
-          + '<td>' + fmtTime(r.start) + '</td>'
-          + '<td>' + fmtDur(r.durationSec) + '</td></tr>';
-      }).join('');
+  els.btnCheckNow.addEventListener('click', function(){
+    if(!workerUrl){ els.cfgCard.style.display = 'block'; return; }
+    els.btnCheckNow.disabled = true;
+    els.btnCheckNow.textContent = '⏳ Mengecek…';
+    api('/api/check-now', { method:'POST', admin:true }).then(function(res){
+      els.btnCheckNow.textContent = '✅ Selesai (' + res.checked + '/' + res.total + ')';
+      refreshStatus();
+      setTimeout(function(){ els.btnCheckNow.textContent = '🔄 Cek Sekarang'; els.btnCheckNow.disabled = false; }, 2500);
     }).catch(function(e){
-      els.liveCount.textContent = '–';
-      els.liveEmpty.style.display = 'block';
-      els.liveEmpty.textContent = 'Gagal memuat: ' + e.message;
+      els.btnCheckNow.textContent = '⚠️ Gagal: ' + e.message;
+      setTimeout(function(){ els.btnCheckNow.textContent = '🔄 Cek Sekarang'; els.btnCheckNow.disabled = false; }, 3000);
     });
+  });
+
+  function toggleIgnore(id, ignore){
+    api('/api/ignore', { method:'POST', admin:true, body:{ id:id, ignore:ignore } })
+      .then(refreshStatus)
+      .catch(function(e){ alert('Gagal: ' + e.message); });
+  }
+  window.__toggleIgnore = toggleIgnore;
+
+  function badge(status){
+    if(status === 'ok') return '<span class="badge ok">● Normal</span>';
+    if(status === 'down') return '<span class="badge down">● Down</span>';
+    if(status === 'diabaikan') return '<span class="badge ignore">○ Diabaikan</span>';
+    return '<span class="badge unknown">○ Belum Dicek</span>';
   }
 
-  function refreshHistory(){
-    if(!apiUrl) return;
-    els.histErr.style.display = 'none';
-    get('/api/history?range=' + encodeURIComponent(currentRange)).then(function(data){
-      var rows = data.sessions || [];
-      els.histCount.textContent = rows.length;
-      var totalSec = rows.reduce(function(a,r){ return a + (r.durationSec||0); }, 0);
-      els.histTotalDur.textContent = fmtDur(totalSec);
-      var byCh = {};
-      rows.forEach(function(r){ var k=r.channel||'(tanpa nama)'; byCh[k]=(byCh[k]||0)+(r.durationSec||0); });
-      var top = Object.keys(byCh).sort(function(a,b){ return byCh[b]-byCh[a]; })[0];
-      els.histTop.textContent = top ? top + ' (' + fmtDur(byCh[top]) + ')' : '–';
+  function render(){
+    var q = (els.searchInput.value || '').toLowerCase();
+    var filter = els.filterSelect.value;
+    var rows = allChannels.filter(function(c){
+      if(filter && c.status !== filter) return false;
+      if(q && !((c.name||'').toLowerCase().indexOf(q)>=0 || (c.group||'').toLowerCase().indexOf(q)>=0)) return false;
+      return true;
+    });
 
-      els.histEmpty.style.display = rows.length ? 'none' : 'block';
-      els.histBody.innerHTML = rows.map(function(r){
-        var statusCell = r.live
-          ? '<span class="badge"><span class="dot"></span>Live</span>'
-          : fmtTime(r.end);
-        return '<tr><td>' + esc(r.channel || '(tanpa nama)') + '</td>'
-          + '<td class="muted">' + esc(r.group||'–') + '</td>'
-          + '<td>' + fmtTime(r.start) + '</td>'
-          + '<td>' + statusCell + '</td>'
-          + '<td>' + fmtDur(r.durationSec) + '</td></tr>';
-      }).join('');
+    var counts = { ok:0, down:0, 'belum-dicek':0, diabaikan:0 };
+    allChannels.forEach(function(c){ if(counts[c.status]!=null) counts[c.status]++; });
+    els.statOk.textContent = counts.ok;
+    els.statDown.textContent = counts.down;
+    els.statUnknown.textContent = counts['belum-dicek'];
+    els.statIgnore.textContent = counts.diabaikan;
+
+    els.chanEmpty.style.display = rows.length ? 'none' : 'block';
+    els.chanBody.innerHTML = rows.map(function(c){
+      var ignoreBtn = c.ignore
+        ? '<button class="tiny ghost" onclick="__toggleIgnore(\'' + c.id + '\', false)">Aktifkan</button>'
+        : '<button class="tiny ghost" onclick="__toggleIgnore(\'' + c.id + '\', true)">Abaikan</button>';
+      return '<tr>'
+        + '<td>' + esc(c.name) + '</td>'
+        + '<td class="muted">' + esc(c.group||'–') + '</td>'
+        + '<td>' + badge(c.status) + '</td>'
+        + '<td>' + (c.consecutiveFails||0) + '</td>'
+        + '<td>' + (c.downSince ? fmtAgo(c.downSince) : '–') + '</td>'
+        + '<td class="errcell" title="' + esc(c.lastError||'') + '">' + esc(c.lastError||'–') + '</td>'
+        + '<td class="muted">' + (c.lastCheck ? fmtAgo(c.lastCheck) : '–') + '</td>'
+        + '<td>' + ignoreBtn + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function refreshStatus(){
+    if(!workerUrl) return;
+    api('/api/status').then(function(data){
+      allChannels = data.channels || [];
+      els.playlistUrlInput.value = data.settings.playlistUrl || '';
+      els.thresholdInput.value = data.settings.failThreshold || 2;
+      els.lastRunLine.textContent = data.lastRun
+        ? ('Pengecekan otomatis terakhir: ' + fmtTime(data.lastRun) + ' (' + fmtAgo(data.lastRun) + ')')
+        : 'Belum pernah dicek -- tekan "Cek Sekarang".';
+      render();
     }).catch(function(e){
-      els.histErr.style.display = 'block';
-      els.histErr.textContent = 'Gagal memuat riwayat: ' + e.message;
-      els.histBody.innerHTML = '';
-      els.histEmpty.style.display = 'none';
+      els.lastRunLine.textContent = 'Gagal memuat status: ' + e.message;
     });
   }
 
-  function startLoops(){
-    refreshLive(); refreshHistory();
-    if(liveTimer) clearInterval(liveTimer);
-    if(histTimer) clearInterval(histTimer);
-    liveTimer = setInterval(refreshLive, 10000);
-    histTimer = setInterval(refreshHistory, 30000);
-  }
-  startLoops();
+  els.searchInput.addEventListener('input', render);
+  els.filterSelect.addEventListener('change', render);
+
+  refreshStatus();
+  pollTimer = setInterval(refreshStatus, 20000);
 })();
 </script>
 </body>
 </html>
+
